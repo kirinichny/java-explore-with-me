@@ -1,15 +1,60 @@
-version: '3.1'
+version: "3.1"
 services:
   stats-server:
+    build: stats-service/server
+    image: stats
+    container_name: Stats
     ports:
       - "9090:9090"
+    depends_on:
+      - stats-db
+    env_file:
+      - .env.stats
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "512M"
 
   stats-db:
-    image: postgres:14-alpine
+    image: postgres:16.0-alpine3.18
+    container_name: StatsDB
+    ports:
+      - "6541:5432"
+    env_file:
+      - .env.stats
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "512M"
 
   ewm-service:
+    build: ewm-main-service
+    image: ewm-main
+    container_name: ExploreWithMe
     ports:
       - "8080:8080"
+    depends_on:
+      - ewm-db
+      - stats-server
+    env_file:
+      - .env.ewm-main
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: "1G"
 
   ewm-db:
-    image: postgres:14-alpine
+    image: postgres:16.0-alpine3.18
+    container_name: ExploreWithMeDB
+    ports:
+      - "6542:5432"
+    env_file:
+      - .env.ewm-main
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "512M"
