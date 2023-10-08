@@ -11,6 +11,10 @@
     <artifactId>ewm-main-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
+    <properties>
+        <lombok.version>1.18.26</lombok.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -48,6 +52,7 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
+            <version>${lombok.version}</version>
         </dependency>
 
         <dependency>
