@@ -36,8 +36,10 @@ public class StatsClientServiceImpl implements StatsClientService {
 
         List<ViewStatsDto> result = new ArrayList<>();
 
-        if (response.getBody() instanceof List) {
-            for (Object item : (List<?>) response.getBody()) {
+        List<?> itemList = (List<?>) response.getBody();
+
+        if (itemList != null) {
+            for (Object item : itemList) {
                 if (item instanceof HashMap) {
                     ViewStatsDto viewStats = objectMapper.convertValue(item, ViewStatsDto.class);
                     result.add(viewStats);
