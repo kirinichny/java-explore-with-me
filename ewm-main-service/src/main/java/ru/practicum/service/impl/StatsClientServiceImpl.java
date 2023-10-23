@@ -21,6 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StatsClientServiceImpl implements StatsClientService {
     private final StatsClient statsClient;
+    private final ObjectMapper objectMapper;
 
     @Override
     public List<ViewStatsDto> getStats(LocalDateTime start, LocalDateTime end,
@@ -33,7 +34,6 @@ public class StatsClientServiceImpl implements StatsClientService {
 
         ResponseEntity<Object> response = statsClient.getStats(startDate, endDate, uris, onlyUniqueHits);
 
-        ObjectMapper objectMapper = new ObjectMapper();
         List<ViewStatsDto> result = new ArrayList<>();
 
         if (response.getBody() instanceof List) {
