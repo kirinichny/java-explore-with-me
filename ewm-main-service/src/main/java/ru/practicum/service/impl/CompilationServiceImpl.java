@@ -5,7 +5,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ru.practicum.dto.compilation.CompilationCreateOrUpdateDto;
 import ru.practicum.dto.compilation.CompilationResponseDto;
-import ru.practicum.exception.ErrorMessage;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.CompilationMapper;
 import ru.practicum.model.compilation.Compilation;
@@ -75,7 +74,7 @@ public class CompilationServiceImpl implements CompilationService {
     private Compilation getCompilationByIdOrThrow(long compilationId) throws NotFoundException {
         return compilationRepository.findById(compilationId)
                 .orElseThrow(() -> new NotFoundException(
-                        ErrorMessage.COMPILATION_NOT_FOUND.formatted(compilationId)));
+                        String.format("Подборка событий #%d не найдена.", compilationId)));
     }
 
     private void assignEventsToCompilation(List<Long> eventIds, Compilation compilation) {
@@ -86,7 +85,7 @@ public class CompilationServiceImpl implements CompilationService {
                 boolean isEventsExist = eventRepository.existsAllByIdIn(eventIds);
 
                 if (!isEventsExist) {
-                    throw new NotFoundException(ErrorMessage.SOME_EVENTS_NOT_FOUND.formatted());
+                    throw new NotFoundException("Одно или несколько событий не найдено.");
                 }
 
                 events = eventIds.stream()

@@ -5,7 +5,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ru.practicum.dto.category.CategoryCreateOrUpdateDto;
 import ru.practicum.dto.category.CategoryResponseDto;
-import ru.practicum.exception.ErrorMessage;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.CategoryMapper;
 import ru.practicum.model.category.Category;
@@ -52,7 +51,6 @@ public class CategoryServiceImpl implements CategoryService {
 
     private Category getCategoryByIdOrThrow(long categoryId) throws NotFoundException {
         return categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new NotFoundException(
-                        ErrorMessage.CATEGORY_NOT_FOUND.formatted(categoryId)));
+                .orElseThrow(() -> new NotFoundException(String.format("Категория #%d не найдена.", categoryId)));
     }
 }

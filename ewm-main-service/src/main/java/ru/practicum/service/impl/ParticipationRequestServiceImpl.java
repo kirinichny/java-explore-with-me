@@ -7,7 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.dto.participationRequest.ParticipationRequestChangeStatusDto;
 import ru.practicum.dto.participationRequest.ParticipationRequestChangeStatusResponseDto;
 import ru.practicum.dto.participationRequest.ParticipationRequestResponseDto;
-import ru.practicum.exception.ErrorMessage;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.ParticipationRequestMapper;
 import ru.practicum.model.event.Event;
@@ -49,10 +48,10 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     @Override
     public ParticipationRequestResponseDto createRequest(long eventId, long userId) {
         Event event = eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException(
-                ErrorMessage.EVENT_NOT_FOUND.formatted(eventId)));
+                String.format("Событие #%d не найдено.", eventId)));
 
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException(
-                ErrorMessage.USER_NOT_FOUND.formatted(userId)));
+                String.format("Пользователь #%d не найден.", userId)));
 
         Long eventInitiatorId = event.getInitiator().getId();
         EventState eventState = event.getState();
@@ -61,18 +60,20 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         LocalDateTime currentDate = LocalDateTime.now();
 
         if (eventInitiatorId.equals(userId)) {
-            throw new DataIntegrityViolationException(
-                    ErrorMessage.USER_SELF_REQUEST.formatted());
+            throw new DataIntegrityViolationException("Пользователь не может отправлять запросы" +
+                    " на участие в своём событии.");
         }
 
         if (!eventState.equals(EventState.PUBLISHED)) {
             throw new DataIntegrityViolationException(
-                    ErrorMessage.CANNOT_APPLY_FOR_EVENT.formatted(eventId, eventState.getName()));
+                    String.format("Невозможно подать заявку на участие в событии #%d, так как событие %s.",
+                            eventId, eventState.getName()));
         }
 
         if (!hasUnlimitedRequests && event.getConfirmedRequestsCount() >= event.getParticipantLimit()) {
             throw new DataIntegrityViolationException(
-                    ErrorMessage.PARTICIPANT_LIMIT_REACHED.formatted(eventId, participantLimit));
+                    String.format("Достигнут лимит участников для события #%d. Максимальный количество" +
+                            " участников: #%d.", eventId, participantLimit));
         }
 
         ParticipationRequestStatus requestStatus = (hasUnlimitedRequests || !event.getRequestModeration())
@@ -97,7 +98,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
 
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException(
-                        ErrorMessage.USER_EVENT_NOT_FOUND.formatted(eventId, userId)));
+                        String.format("Событие #%d у пользователя #%d не найдено.", eventId, userId)));
 
         List<Long> requestIds = statusData.getRequestIds();
         ParticipationRequestStatus newStatus = statusData.getStatus();
@@ -113,17 +114,16 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         boolean isRequestsExist = requestRepository.existsAllByIdInAndEventId(requestIds, eventId);
 
         if (!isRequestsExist) {
-            throw new NotFoundException(ErrorMessage.SOME_REQUESTS_NOT_FOUND.formatted());
+            throw new NotFoundException("Одна или несколько заявок на участие в событии не найдены.");
         }
 
         if (!areAllRequestsPending) {
-            throw new DataIntegrityViolationException(
-                    ErrorMessage.INVALID_REQUEST_STATUS.formatted());
+            throw new DataIntegrityViolationException("Недопустимое состояние запроса на участие");
         }
 
         if (!hasUnlimitedRequests && participantLimit - confirmedRequestsCount < expectedRemainingLimit) {
-            throw new DataIntegrityViolationException(
-                    ErrorMessage.PARTICIPANT_LIMIT_REACHED.formatted(eventId, participantLimit));
+            throw new DataIntegrityViolationException(String.format("Достигнут лимит участников для события #%d." +
+                    " Максимальный количество участников: #%d.", eventId, participantLimit));
         }
 
         requestRepository.updateRequestStatuses(requestIds, newStatus);
@@ -153,7 +153,8 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     public ParticipationRequestResponseDto cancelRequest(long requestId, long userId) {
         ParticipationRequest request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new NotFoundException(
-                        ErrorMessage.USER_REQUEST_NOT_FOUND.formatted(requestId, userId)));
+                        String.format("Заявку на участие в событии #%d у пользователя #%d не найдена.",
+                                requestId, userId)));
 
         request.setStatus(ParticipationRequestStatus.CANCELED);
 

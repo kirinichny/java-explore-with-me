@@ -5,7 +5,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ru.practicum.dto.user.UserCreateOrUpdateDto;
 import ru.practicum.dto.user.UserResponseDto;
-import ru.practicum.exception.ErrorMessage;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.UserMapper;
 import ru.practicum.model.user.User;
@@ -44,6 +43,6 @@ public class UserServiceImpl implements UserService {
 
     private User getUserByIdOrThrow(long userId) throws NotFoundException {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(ErrorMessage.USER_NOT_FOUND.formatted(userId)));
+                .orElseThrow(() -> new NotFoundException(String.format("Пользователь #%d не найден.", userId)));
     }
 }

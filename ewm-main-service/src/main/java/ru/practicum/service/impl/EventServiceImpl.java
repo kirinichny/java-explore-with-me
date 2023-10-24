@@ -12,7 +12,6 @@ import ru.practicum.dto.event.EventFullDto;
 import ru.practicum.dto.event.EventShortDto;
 import ru.practicum.dto.event.EventUpdateAdminDto;
 import ru.practicum.dto.event.EventUpdateUserDto;
-import ru.practicum.exception.ErrorMessage;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.EventMapper;
 import ru.practicum.model.category.Category;
@@ -90,7 +89,8 @@ public class EventServiceImpl implements EventService {
         }
 
         if (Objects.nonNull(rangeStart) && Objects.nonNull(rangeEnd) && rangeEnd.isBefore(rangeStart)) {
-            throw new ValidationException(ErrorMessage.DATE_RANGE_INCORRECT.formatted());
+            throw new ValidationException("Временной диапазон некорректен. Конечная дата" +
+                    " не может быть раньше начальной даты.");
         }
 
         Specification<Event> spec = Specification
@@ -116,7 +116,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventFullDto createEvent(EventCreateDto event, long userId) {
         User initiator = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(ErrorMessage.USER_NOT_FOUND.formatted(userId)));
+                .orElseThrow(() -> new NotFoundException(String.format("Пользователь #%d не найден.", userId)));
 
         LocalDateTime currentDate = LocalDateTime.now();
         Event eventToSave = eventMapper.toEvent(event);
@@ -135,7 +135,7 @@ public class EventServiceImpl implements EventService {
 
         if (!currentState.equals(EventState.PENDING) && !currentState.equals(EventState.CANCELED)) {
             throw new DataIntegrityViolationException(
-                    ErrorMessage.EVENT_CANNOT_BE_EDITED.formatted(currentState.getName()));
+                    String.format("Невозможно изменить событие, так как событие %s", currentState.getName()));
         }
 
         if (EventStateUserAction.SEND_TO_REVIEW.equals(event.getStateAction())) {
@@ -163,7 +163,7 @@ public class EventServiceImpl implements EventService {
             currentEvent.setState(EventState.CANCELED);
         } else if (Objects.nonNull(event.getStateAction())) {
             throw new DataIntegrityViolationException(
-                    ErrorMessage.EVENT_CANNOT_BE_EDITED.formatted(currentState.getName()));
+                    String.format("Невозможно изменить событие, так как событие %s", currentState.getName()));
         }
 
         updateCommonEventFields(currentEvent, event);
@@ -211,20 +211,18 @@ public class EventServiceImpl implements EventService {
 
     private Event getEventByIdOrThrow(long eventId) throws NotFoundException {
         return eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException(
-                        ErrorMessage.EVENT_NOT_FOUND.formatted(eventId)));
+                .orElseThrow(() -> new NotFoundException(String.format("Событие #%d не найдено.", eventId)));
     }
 
     private Event getPublishedEventByIdOrThrow(long eventId) throws NotFoundException {
         return eventRepository.findByIdAndState(eventId, EventState.PUBLISHED)
-                .orElseThrow(() -> new NotFoundException(
-                        ErrorMessage.EVENT_NOT_FOUND.formatted(eventId)));
+                .orElseThrow(() -> new NotFoundException(String.format("Событие #%d не найдено.", eventId)));
     }
 
     private Event getEventByInitiatorIdOrThrow(Long eventId, Long initiatorId) {
         return eventRepository.findByIdAndInitiatorId(eventId, initiatorId)
                 .orElseThrow(() -> new NotFoundException(
-                        ErrorMessage.USER_EVENT_NOT_FOUND.formatted(eventId, initiatorId)));
+                        String.format("Событие #%d у пользователя #%d не найдено.", eventId, initiatorId)));
     }
 
     private List<Event> sortEvents(List<Event> events, EventSortOption sortOption) {
@@ -242,7 +240,7 @@ public class EventServiceImpl implements EventService {
                         .sorted(Comparator.nullsFirst(Comparator.comparing(Event::getViews)))
                         .collect(Collectors.toList());
             default:
-                throw new IllegalArgumentException(ErrorMessage.UNSUPPORTED_EVENT_SORT_OPTION.formatted());
+                throw new IllegalArgumentException("Выбранная опция сортировки событий не поддерживается");
         }
     }
 
