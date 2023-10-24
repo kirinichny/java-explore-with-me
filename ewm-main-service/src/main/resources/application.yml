@@ -1,3 +1,6 @@
+stats-server:
+  url: ${STATS_SERVER_URL:http://localhost:9090}
+
 server:
   port: 8080
 
@@ -12,6 +15,8 @@ spring:
   sql:
     init:
       mode: always
+  application:
+    name: "ewm-main-service"
 
 spring.datasource:
   driverClassName: org.postgresql.Driver
