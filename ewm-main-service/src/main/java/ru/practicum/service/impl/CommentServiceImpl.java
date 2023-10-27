@@ -1,6 +1,8 @@
 package ru.practicum.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,7 @@ import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
@@ -40,16 +43,26 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public CommentResponseDto getPublishedCommentById(long commentId, long eventId) {
-        return commentMapper.toCommentResponseDto(getPublishedCommentByIdOrThrow(commentId));
+        log.debug("+ getCommentById: commentId={}", commentId);
+        CommentResponseDto comment = commentMapper.toCommentResponseDto(getPublishedCommentByIdOrThrow(commentId));
+        log.debug("- getCommentById: {}", comment);
+        return comment;
     }
 
     @Override
     public CommentResponseDto getCommentById(long commentId, long authorId) {
-        return commentMapper.toCommentResponseDto(getCommentByIdOrThrow(commentId, authorId));
+        log.debug("+ getCommentById: commentId={}", commentId);
+        CommentResponseDto comment = commentMapper.toCommentResponseDto(getCommentByIdOrThrow(commentId, authorId));
+        log.debug("- getCommentById: {}", comment);
+        return comment;
     }
 
     @Override
-    public List<CommentResponseDto> searchComments(CommentSearchPublicFilter filter, long eventId, Pageable pageable) {
+    public List<CommentResponseDto> searchComments(CommentSearchPublicFilter filter, long eventId, Integer from, Integer size) {
+        log.debug("+ searchComments");
+
+        Pageable pageable = PageRequest.of(from / size, size);
+
         Specification<Comment> spec = Specification
                 .where(CommentSpecification.withCommentText(filter.getText()))
                 .and(CommentSpecification.withRangeStart(filter.getRangeStart()))
@@ -58,13 +71,20 @@ public class CommentServiceImpl implements CommentService {
                 .and(CommentSpecification.withEventId(eventId))
                 .and(CommentSpecification.withStatus(CommentStatus.PUBLISHED));
 
-        List<Comment> comments = commentRepository.findAll(spec, pageable).getContent();
+        List<CommentResponseDto> comments = commentMapper.toCommentResponseDto(
+                commentRepository.findAll(spec, pageable).getContent());
 
-        return commentMapper.toCommentResponseDto(comments);
+        log.debug("- searchComments: {}", comments);
+
+        return comments;
     }
 
     @Override
-    public List<CommentResponseDto> searchComments(CommentSearchPrivateFilter filter, long authorId, Pageable pageable) {
+    public List<CommentResponseDto> searchComments(CommentSearchPrivateFilter filter, long authorId, Integer from, Integer size) {
+        log.debug("+ searchComments");
+
+        Pageable pageable = PageRequest.of(from / size, size);
+
         CommentStatus commentStatus = (filter.getShowDeleted()) ?
                 CommentStatus.DELETED_BY_AUTHOR : CommentStatus.PUBLISHED;
 
@@ -76,13 +96,20 @@ public class CommentServiceImpl implements CommentService {
                 .and(CommentSpecification.withAuthorId(authorId))
                 .and(CommentSpecification.withStatus(commentStatus));
 
-        List<Comment> comments = commentRepository.findAll(spec, pageable).getContent();
+        List<CommentResponseDto> comments = commentMapper.toCommentResponseDto(
+                commentRepository.findAll(spec, pageable).getContent());
 
-        return commentMapper.toCommentResponseDto(comments);
+        log.debug("- searchComments: {}", comments);
+
+        return comments;
     }
 
     @Override
-    public List<CommentResponseDto> searchComments(CommentSearchAdminFilter filter, Pageable pageable) {
+    public List<CommentResponseDto> searchComments(CommentSearchAdminFilter filter, Integer from, Integer size) {
+        log.debug("+ searchComments");
+
+        Pageable pageable = PageRequest.of(from / size, size);
+
         CommentStatus commentStatus = (filter.getShowDeleted()) ?
                 CommentStatus.DELETED_BY_ADMIN : CommentStatus.PUBLISHED;
 
@@ -95,13 +122,18 @@ public class CommentServiceImpl implements CommentService {
                 .and(CommentSpecification.onlyAnonymous(filter.getOnlyAnonymous()))
                 .and(CommentSpecification.withStatus(commentStatus));
 
-        List<Comment> comments = commentRepository.findAll(spec, pageable).getContent();
+        List<CommentResponseDto> comments = commentMapper.toCommentResponseDto(
+                commentRepository.findAll(spec, pageable).getContent());
 
-        return commentMapper.toCommentResponseDto(comments);
+        log.debug("- searchComments: {}", comments);
+
+        return comments;
     }
 
     @Override
     public CommentResponseDto createComment(CommentCreateDto comment, Long authorId) {
+        log.debug("+ createComment: comment={}", comment);
+
         Event event = getEventByIdOrThrow(comment.getEventId());
         Long parentCommentId = comment.getParentCommentId();
 
@@ -125,7 +157,11 @@ public class CommentServiceImpl implements CommentService {
         commentToSave.setStatus(CommentStatus.PUBLISHED);
         commentToSave.setCreatedOn(currentDate);
 
-        return commentMapper.toCommentResponseDto(commentRepository.save(commentToSave));
+        CommentResponseDto createdComment = commentMapper.toCommentResponseDto(commentRepository.save(commentToSave));
+
+        log.debug("- createComment");
+
+        return createdComment;
     }
 
     @Override
@@ -135,27 +171,36 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public CommentResponseDto updateComment(long commentId, CommentUpdateDto comment, long userId) {
-        Comment currentComment = getCommentByIdOrThrow(commentId, userId);
+        log.debug("+ updateComment: commentId={}", commentId);
 
+        Comment currentComment = getCommentByIdOrThrow(commentId, userId);
 
         currentComment.setComment(comment.getComment());
         currentComment.setLastModifiedDate(LocalDateTime.now());
 
-        return commentMapper.toCommentResponseDto(commentRepository.save(currentComment));
+        CommentResponseDto updatedComment = commentMapper.toCommentResponseDto(commentRepository.save(currentComment));
+
+        log.debug("- updateComment: {}", updatedComment);
+
+        return updatedComment;
     }
 
     @Transactional
     @Override
     public void deleteComment(long commentId, long userId) {
+        log.debug("+ deleteComment: commentId={}", commentId);
         getCommentByIdOrThrow(commentId, userId);
         commentRepository.updateCommentStatus(commentId, CommentStatus.DELETED_BY_AUTHOR);
+        log.debug("- deleteComment");
     }
 
     @Transactional
     @Override
     public void deleteComment(long commentId) {
+        log.debug("+ deleteComment: commentId={}", commentId);
         getPublishedCommentByIdOrThrow(commentId);
         commentRepository.updateCommentStatus(commentId, CommentStatus.DELETED_BY_ADMIN);
+        log.debug("- deleteComment");
     }
 
     private Comment getPublishedCommentByIdOrThrow(long commentId) throws NotFoundException {

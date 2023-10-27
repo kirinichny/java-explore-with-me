@@ -1,7 +1,6 @@
 package ru.practicum.controller.compilation;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -20,7 +19,6 @@ import ru.practicum.validation.ValidationGroup;
 @RestController
 @RequestMapping("/admin/compilations")
 @RequiredArgsConstructor
-@Slf4j
 public class CompilationAdminController {
     private final CompilationService compilationService;
 
@@ -28,27 +26,19 @@ public class CompilationAdminController {
     @ResponseStatus(HttpStatus.CREATED)
     public CompilationResponseDto createCompilation(
             @RequestBody @Validated(ValidationGroup.Create.class) CompilationCreateOrUpdateDto compilation) {
-        log.debug("+ createCompilation: {}", compilation);
-        CompilationResponseDto createdCompilation = compilationService.createCompilation(compilation);
-        log.debug("- createCompilation: {}", createdCompilation);
-        return createdCompilation;
+        return compilationService.createCompilation(compilation);
     }
 
     @PatchMapping("/{compilationId}")
     public CompilationResponseDto updateCompilation(@PathVariable long compilationId,
                                                     @RequestBody @Validated(ValidationGroup.Update.class)
                                                     CompilationCreateOrUpdateDto compilation) {
-        log.debug("+ updateCompilation: {}", compilation);
-        CompilationResponseDto updatedCompilation = compilationService.updateCompilation(compilationId, compilation);
-        log.debug("- updateCompilation: {}", updatedCompilation);
-        return updatedCompilation;
+        return compilationService.updateCompilation(compilationId, compilation);
     }
 
     @DeleteMapping("/{compilationId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteCompilation(@PathVariable long compilationId) {
-        log.debug("+ deleteCompilation: CompilationId={}", compilationId);
         compilationService.deleteCompilation(compilationId);
-        log.debug("- deleteCompilation");
     }
 }

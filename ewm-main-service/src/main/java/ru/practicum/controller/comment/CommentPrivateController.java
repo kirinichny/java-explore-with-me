@@ -1,9 +1,6 @@
 package ru.practicum.controller.comment;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -32,16 +29,12 @@ import java.util.List;
 @RequestMapping("/users/{userId}/comments")
 @RequiredArgsConstructor
 @Validated
-@Slf4j
 public class CommentPrivateController {
     private final CommentService commentService;
 
     @GetMapping("/{commentId}")
     public CommentResponseDto getCommentById(@PathVariable long commentId, @PathVariable long userId) {
-        log.debug("+ getCommentById: commentId={}", commentId);
-        CommentResponseDto comment = commentService.getCommentById(commentId, userId);
-        log.debug("- getCommentById: {}", comment);
-        return comment;
+        return commentService.getCommentById(commentId, userId);
     }
 
     @GetMapping
@@ -51,37 +44,25 @@ public class CommentPrivateController {
             @RequestParam(value = "from", defaultValue = "0") @Min(0) Integer from,
             @RequestParam(value = "size", defaultValue = "10") @Min(1) @Max(20) Integer size
     ) {
-        log.debug("+ searchComments");
-        Pageable pageable = PageRequest.of(from / size, size);
-        List<CommentResponseDto> comments = commentService.searchComments(filter, userId, pageable);
-        log.debug("- searchComments: {}", comments);
-        return comments;
+        return commentService.searchComments(filter, userId, from, size);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CommentResponseDto createComment(@RequestBody @Valid CommentCreateDto comment, @PathVariable long userId) {
-        log.debug("+ createComment: comment={}", comment);
-        CommentResponseDto createdComment = commentService.createComment(comment, userId);
-        log.debug("- createComment");
-        return createdComment;
+        return commentService.createComment(comment, userId);
     }
 
     @PatchMapping("/{commentId}")
     public CommentResponseDto updateComment(@PathVariable long commentId,
                                             @RequestBody @Valid CommentUpdateDto comment,
                                             @PathVariable long userId) {
-        log.debug("+ updateComment: commentId={}", commentId);
-        CommentResponseDto updatedComment = commentService.updateComment(commentId, comment, userId);
-        log.debug("- updateComment: {}", updatedComment);
-        return updatedComment;
+        return commentService.updateComment(commentId, comment, userId);
     }
 
     @DeleteMapping("/{commentId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteComment(@PathVariable long commentId, @PathVariable long userId) {
-        log.debug("+ deleteComment: commentId={}", commentId);
         commentService.deleteComment(commentId, userId);
-        log.debug("- deleteComment");
     }
 }

@@ -1,6 +1,8 @@
 package ru.practicum.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ru.practicum.dto.category.CategoryCreateOrUpdateDto;
@@ -15,38 +17,53 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
 
     @Override
     public CategoryResponseDto getCategoryById(long categoryId) {
-        return categoryMapper.toCategoryResponseDto(getCategoryByIdOrThrow(categoryId));
+        log.debug("+ getCategoryById: categoryId={}", categoryId);
+        CategoryResponseDto category = categoryMapper.toCategoryResponseDto(getCategoryByIdOrThrow(categoryId));
+        log.debug("- getCategoryById: {}", category);
+        return category;
     }
 
     @Override
-    public List<CategoryResponseDto> getCategories(Pageable pageable) {
-        List<Category> categories = categoryRepository.findAll(pageable).getContent();
-
-        return categoryMapper.toCategoryResponseDto(categories);
+    public List<CategoryResponseDto> getCategories(Integer from, Integer size) {
+        log.debug("+ getCategories");
+        Pageable pageable = PageRequest.of(from / size, size);
+        List<CategoryResponseDto> categories = categoryMapper.toCategoryResponseDto(
+                categoryRepository.findAll(pageable).getContent());
+        log.debug("- getCategories: {}", categories);
+        return categories;
     }
 
     @Override
     public CategoryResponseDto createCategory(CategoryCreateOrUpdateDto category) {
-        return categoryMapper.toCategoryResponseDto(
+        log.debug("+ createCategory: {}", category);
+        CategoryResponseDto createdUser = categoryMapper.toCategoryResponseDto(
                 categoryRepository.save(categoryMapper.toCategory(category)));
+        log.debug("- createCategory: {}", createdUser);
+        return createdUser;
     }
 
     @Override
     public CategoryResponseDto updateCategory(long categoryId, CategoryCreateOrUpdateDto category) {
+        log.debug("+ updateCategory: {}", category);
         Category currentCategory = getCategoryByIdOrThrow(categoryId);
         currentCategory.setName(category.getName());
-        return categoryMapper.toCategoryResponseDto(categoryRepository.save(currentCategory));
+        CategoryResponseDto updatedCategory = categoryMapper.toCategoryResponseDto(categoryRepository.save(currentCategory));
+        log.debug("- updateCategory: {}", updatedCategory);
+        return updatedCategory;
     }
 
     @Override
     public void deleteCategory(long categoryId) {
+        log.debug("+ deleteCategory: CategoryId={}", categoryId);
         categoryRepository.delete(getCategoryByIdOrThrow(categoryId));
+        log.debug("- deleteCategory");
     }
 
     private Category getCategoryByIdOrThrow(long categoryId) throws NotFoundException {

@@ -1,6 +1,5 @@
 package ru.practicum.service;
 
-import org.springframework.data.domain.Pageable;
 import ru.practicum.dto.comment.CommentCreateDto;
 import ru.practicum.dto.comment.CommentResponseDto;
 import ru.practicum.dto.comment.CommentUpdateDto;
@@ -15,11 +14,11 @@ public interface CommentService {
 
     CommentResponseDto getCommentById(long commentId, long userId);
 
-    List<CommentResponseDto> searchComments(CommentSearchPublicFilter filter, long eventId, Pageable pageable);
+    List<CommentResponseDto> searchComments(CommentSearchPublicFilter filter, long eventId, Integer from, Integer size);
 
-    List<CommentResponseDto> searchComments(CommentSearchPrivateFilter filter, long authorId, Pageable pageable);
+    List<CommentResponseDto> searchComments(CommentSearchPrivateFilter filter, long authorId, Integer from, Integer size);
 
-    List<CommentResponseDto> searchComments(CommentSearchAdminFilter filter, Pageable pageable);
+    List<CommentResponseDto> searchComments(CommentSearchAdminFilter filter, Integer from, Integer size);
 
     CommentResponseDto createComment(CommentCreateDto comment);
 

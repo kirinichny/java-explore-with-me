@@ -1,7 +1,9 @@
 package ru.practicum.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -40,6 +42,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
@@ -48,26 +51,42 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventFullDto getEventById(long eventId, long userId) {
-        return eventMapper.toEventFullDto(getEventByInitiatorIdOrThrow(eventId, userId));
+        log.debug("+ getEventById: eventId={}", eventId);
+        EventFullDto event = eventMapper.toEventFullDto(getEventByInitiatorIdOrThrow(eventId, userId));
+        log.debug("- getEventById: {}", event);
+        return event;
     }
 
     @Override
     public EventFullDto getPublishedEventById(long eventId) {
+        log.debug("+ getEventById: eventId={}", eventId);
         Event event = getPublishedEventByIdOrThrow(eventId);
         setEventViewsCount(event);
-
-        return eventMapper.toEventFullDto(getPublishedEventByIdOrThrow(eventId));
+        EventFullDto result = eventMapper.toEventFullDto(event);
+        log.debug("- getEventById: {}", result);
+        return result;
     }
 
     @Override
-    public List<EventShortDto> getEventsByInitiatorId(long initiatorId, Pageable pageable) {
-        List<Event> events = eventRepository.findByInitiatorId(initiatorId, pageable);
+    public List<EventShortDto> getEventsByInitiatorId(long initiatorId, Integer from, Integer size) {
+        log.debug("+ getEventsByInitiatorId: initiatorId={}", initiatorId);
 
-        return eventMapper.toEventShortDto(events);
+        Pageable pageable = PageRequest.of(from / size, size);
+
+        List<EventShortDto> events = eventMapper.toEventShortDto(
+                eventRepository.findByInitiatorId(initiatorId, pageable));
+
+        log.debug("- getEventsByInitiatorId: {}", events);
+
+        return events;
     }
 
     @Override
-    public List<EventFullDto> searchEvents(EventSearchAdminFilter filter, Pageable pageable) {
+    public List<EventFullDto> searchEvents(EventSearchAdminFilter filter, Integer from, Integer size) {
+        log.debug("+ getCategories");
+
+        Pageable pageable = PageRequest.of(from / size, size);
+
         Specification<Event> spec = Specification
                 .where(EventSpecification.withInitiatorIds(filter.getUsers()))
                 .and(EventSpecification.withStates(filter.getStates()))
@@ -75,12 +94,19 @@ public class EventServiceImpl implements EventService {
                 .and(EventSpecification.withRangeStart(filter.getRangeStart()))
                 .and(EventSpecification.withRangeEnd(filter.getRangeEnd()));
 
-        return eventMapper.toEventFullDto(
+        List<EventFullDto> events = eventMapper.toEventFullDto(
                 eventRepository.findAll(spec, pageable).getContent());
+
+        log.debug("- getCategories: {}", events);
+
+        return events;
     }
 
     @Override
-    public List<EventShortDto> searchEvents(EventSearchPublicFilter filter, Pageable pageable) {
+    public List<EventShortDto> searchEvents(EventSearchPublicFilter filter, Integer from, Integer size) {
+        log.debug("+ getCategories");
+
+        Pageable pageable = PageRequest.of(from / size, size);
         LocalDateTime rangeStart = filter.getRangeStart();
         LocalDateTime rangeEnd = filter.getRangeEnd();
 
@@ -110,11 +136,17 @@ public class EventServiceImpl implements EventService {
 
         setEventViewsCount(events);
 
-        return eventMapper.toEventShortDto(events);
+        List<EventShortDto> result = eventMapper.toEventShortDto(events);
+
+        log.debug("- getCategories: {}", result);
+
+        return result;
     }
 
     @Override
     public EventFullDto createEvent(EventCreateDto event, long userId) {
+        log.debug("+ createEvent");
+
         User initiator = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(String.format("Пользователь #%d не найден.", userId)));
 
@@ -125,11 +157,17 @@ public class EventServiceImpl implements EventService {
         eventToSave.setState(EventState.PENDING);
         eventToSave.setCreatedOn(currentDate);
 
-        return eventMapper.toEventFullDto(eventRepository.save(eventToSave));
+        EventFullDto createdEvent = eventMapper.toEventFullDto(eventRepository.save(eventToSave));
+
+        log.debug("- createEvent: {}", createdEvent);
+
+        return createdEvent;
     }
 
     @Override
     public EventFullDto updateEvent(long eventId, EventUpdateUserDto event, long userId) {
+        log.debug("+ updateEvent: eventId={}", eventId);
+
         Event currentEvent = getEventByInitiatorIdOrThrow(eventId, userId);
         EventState currentState = currentEvent.getState();
 
@@ -146,11 +184,17 @@ public class EventServiceImpl implements EventService {
 
         updateCommonEventFields(currentEvent, event);
 
-        return eventMapper.toEventFullDto(eventRepository.save(currentEvent));
+        EventFullDto updatedEvent = eventMapper.toEventFullDto(eventRepository.save(currentEvent));
+
+        log.debug("- updateEvent: {}", updatedEvent);
+
+        return updatedEvent;
     }
 
     @Override
     public EventFullDto updateEvent(long eventId, EventUpdateAdminDto event) {
+        log.debug("+ updateEvent: eventId={}", eventId);
+
         Event currentEvent = getEventByIdOrThrow(eventId);
         EventState currentState = currentEvent.getState();
 
@@ -168,7 +212,10 @@ public class EventServiceImpl implements EventService {
 
         updateCommonEventFields(currentEvent, event);
 
-        return eventMapper.toEventFullDto(eventRepository.save(currentEvent));
+        EventFullDto updatedEvent = eventMapper.toEventFullDto(eventRepository.save(currentEvent));
+
+        log.debug("- updateEvent: {}", updatedEvent);
+        return updatedEvent;
     }
 
     private void updateCommonEventFields(Event currentEvent, EventCreateOrUpdateBaseDto newEvent) {

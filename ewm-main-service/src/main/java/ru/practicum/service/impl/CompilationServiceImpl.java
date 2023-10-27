@@ -1,6 +1,8 @@
 package ru.practicum.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ru.practicum.dto.compilation.CompilationCreateOrUpdateDto;
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CompilationServiceImpl implements CompilationService {
     private final CompilationRepository compilationRepository;
     private final EventRepository eventRepository;
@@ -27,26 +30,40 @@ public class CompilationServiceImpl implements CompilationService {
 
     @Override
     public CompilationResponseDto getCompilationById(long compilationId) {
-        return compilationMapper.toCompilationResponseDto(getCompilationByIdOrThrow(compilationId));
+        log.debug("+ getCompilationById: compilationId={}", compilationId);
+        CompilationResponseDto compilation = compilationMapper.toCompilationResponseDto(getCompilationByIdOrThrow(compilationId));
+        log.debug("- getCompilationById: {}", compilation);
+        return compilation;
     }
 
     @Override
-    public List<CompilationResponseDto> getCompilations(boolean isPinned, Pageable pageable) {
-        List<Compilation> compilations = compilationRepository.findAllByPinned(isPinned, pageable);
-
-        return compilationMapper.toCompilationResponseDto(compilations);
+    public List<CompilationResponseDto> getCompilations(boolean isPinned, Integer from, Integer size) {
+        log.debug("+ getCompilations");
+        Pageable pageable = PageRequest.of(from / size, size);
+        List<CompilationResponseDto> compilations = compilationMapper.toCompilationResponseDto(
+                compilationRepository.findAllByPinned(isPinned, pageable));
+        log.debug("- getCompilations: {}", compilations);
+        return compilations;
     }
 
     @Override
     public CompilationResponseDto createCompilation(CompilationCreateOrUpdateDto compilation) {
+        log.debug("+ createCompilation: {}", compilation);
+
         Compilation compilationToSave = compilationMapper.toCompilation(compilation);
         assignEventsToCompilation(compilation.getEvents(), compilationToSave);
 
-        return compilationMapper.toCompilationResponseDto(compilationRepository.save(compilationToSave));
+        CompilationResponseDto createdCompilation = compilationMapper.toCompilationResponseDto(compilationRepository.save(compilationToSave));
+
+        log.debug("- createCompilation: {}", createdCompilation);
+
+        return createdCompilation;
     }
 
     @Override
     public CompilationResponseDto updateCompilation(long compilationId, CompilationCreateOrUpdateDto compilation) {
+        log.debug("+ updateCompilation: {}", compilation);
+
         Compilation currentCompilation = getCompilationByIdOrThrow(compilationId);
 
         String title = compilation.getTitle();
@@ -63,12 +80,18 @@ public class CompilationServiceImpl implements CompilationService {
             currentCompilation.setPinned(isPinned);
         }
 
-        return compilationMapper.toCompilationResponseDto(compilationRepository.save(currentCompilation));
+        CompilationResponseDto updatedCompilation = compilationMapper.toCompilationResponseDto(compilationRepository.save(currentCompilation));
+
+        log.debug("- updateCompilation: {}", updatedCompilation);
+
+        return updatedCompilation;
     }
 
     @Override
     public void deleteCompilation(long compilationId) {
+        log.debug("+ deleteCompilation: CompilationId={}", compilationId);
         compilationRepository.delete(getCompilationByIdOrThrow(compilationId));
+        log.debug("- deleteCompilation");
     }
 
     private Compilation getCompilationByIdOrThrow(long compilationId) throws NotFoundException {

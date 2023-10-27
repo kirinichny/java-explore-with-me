@@ -1,9 +1,6 @@
 package ru.practicum.controller.event;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -29,7 +26,6 @@ import java.util.List;
 @RequestMapping("/events")
 @RequiredArgsConstructor
 @Validated
-@Slf4j
 public class EventPublicController {
     private final EventService eventService;
     private final CommentService commentService;
@@ -42,21 +38,14 @@ public class EventPublicController {
             @RequestParam(value = "size", defaultValue = "10") @Min(1) Integer size,
             HttpServletRequest request
     ) {
-        log.debug("+ getCategories");
-        Pageable pageable = PageRequest.of(from / size, size);
         statsClientService.addHit(request);
-        List<EventShortDto> events = eventService.searchEvents(filter, pageable);
-        log.debug("- getCategories: {}", events);
-        return events;
+        return eventService.searchEvents(filter, from, size);
     }
 
     @GetMapping("/{eventId}")
     public EventFullDto getEventById(@PathVariable long eventId, HttpServletRequest request) {
-        log.debug("+ getEventById: eventId={}", eventId);
         statsClientService.addHit(request);
-        EventFullDto event = eventService.getPublishedEventById(eventId);
-        log.debug("- getEventById: {}", event);
-        return event;
+        return eventService.getPublishedEventById(eventId);
     }
 
     @GetMapping("/{eventId}/comments")
@@ -66,18 +55,11 @@ public class EventPublicController {
             @RequestParam(value = "from", defaultValue = "0") @Min(0) Integer from,
             @RequestParam(value = "size", defaultValue = "10") @Min(1) @Max(20) Integer size
     ) {
-        log.debug("+ searchComments");
-        Pageable pageable = PageRequest.of(from / size, size);
-        List<CommentResponseDto> comments = commentService.searchComments(filter, eventId, pageable);
-        log.debug("- searchComments: {}", comments);
-        return comments;
+        return commentService.searchComments(filter, eventId, from, size);
     }
 
     @GetMapping("/{eventId}/comments/{commentId}")
     public CommentResponseDto getCommentById(@PathVariable long commentId, @PathVariable long eventId) {
-        log.debug("+ getCommentById: commentId={}", commentId);
-        CommentResponseDto comment = commentService.getPublishedCommentById(commentId, eventId);
-        log.debug("- getCommentById: {}", comment);
-        return comment;
+        return commentService.getPublishedCommentById(commentId, eventId);
     }
 }

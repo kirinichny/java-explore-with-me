@@ -1,6 +1,7 @@
 package ru.practicum.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ParticipationRequestServiceImpl implements ParticipationRequestService {
     private final ParticipationRequestRepository requestRepository;
     private final EventRepository eventRepository;
@@ -32,21 +34,26 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
 
     @Override
     public List<ParticipationRequestResponseDto> getRequestsByEventId(long eventId, long userId) {
-        List<ParticipationRequest> requests = requestRepository.findByEventIdAndEventInitiatorId(eventId, userId);
-
-        return requestMapper.toResponseDto(requests);
+        log.debug("+ getParticipationRequestsEventById: eventId={}, userId={}", eventId, userId);
+        List<ParticipationRequestResponseDto> requests = requestMapper.toResponseDto(
+                requestRepository.findByEventIdAndEventInitiatorId(eventId, userId));
+        log.debug("- getParticipationRequestsEventById: {}", requests);
+        return requests;
     }
 
     @Override
     public List<ParticipationRequestResponseDto> getRequestsByRequesterId(long requesterId) {
-        List<ParticipationRequest> requests = requestRepository.findByRequesterId(requesterId);
-
-        return requestMapper.toResponseDto(requests);
+        log.debug("+ getRequestsByRequesterId: requesterId={}", requesterId);
+        List<ParticipationRequestResponseDto> requests = requestMapper.toResponseDto(requestRepository.findByRequesterId(requesterId));
+        log.debug("- getRequestsByRequesterId: {}", requests);
+        return requests;
     }
 
     @Transactional
     @Override
     public ParticipationRequestResponseDto createRequest(long eventId, long userId) {
+        log.debug("+ createRequest");
+
         Event event = eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException(
                 String.format("Событие #%d не найдено.", eventId)));
 
@@ -88,13 +95,18 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
 
         eventRepository.updateConfirmedRequestCountForEvents(eventId);
 
-        return requestMapper.toResponseDto(request);
+        ParticipationRequestResponseDto createdRequest = requestMapper.toResponseDto(request);
+
+        log.debug("- createRequest: {}", createdRequest);
+
+        return createdRequest;
     }
 
     @Transactional
     @Override
     public ParticipationRequestChangeStatusResponseDto updateRequestStatuses(
             ParticipationRequestChangeStatusDto statusData, long eventId, long userId) {
+        log.debug("+ updateRequestStatuses: eventId={}", eventId);
 
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException(
@@ -142,15 +154,21 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         List<ParticipationRequest> rejectedRequests = requestRepository
                 .getAllByEventIdAndStatus(eventId, ParticipationRequestStatus.REJECTED);
 
-        return ParticipationRequestChangeStatusResponseDto.builder()
+        ParticipationRequestChangeStatusResponseDto updatedRequest = ParticipationRequestChangeStatusResponseDto.builder()
                 .confirmedRequests(requestMapper.toResponseDto(confirmedRequests))
                 .rejectedRequests(requestMapper.toResponseDto(rejectedRequests))
                 .build();
+
+        log.debug("- updateRequestStatuses");
+
+        return updatedRequest;
     }
 
     @Transactional
     @Override
     public ParticipationRequestResponseDto cancelRequest(long requestId, long userId) {
+        log.debug("+ cancelRequest: requestId={}", requestId);
+
         ParticipationRequest request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new NotFoundException(
                         String.format("Заявку на участие в событии #%d у пользователя #%d не найдена.",
@@ -161,7 +179,10 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         requestRepository.save(request);
         eventRepository.updateConfirmedRequestCountForEvents(request.getEvent().getId());
 
-        return requestMapper.toResponseDto(request);
-    }
+        ParticipationRequestResponseDto result = requestMapper.toResponseDto(request);
 
+        log.debug("- cancelRequest");
+
+        return result;
+    }
 }

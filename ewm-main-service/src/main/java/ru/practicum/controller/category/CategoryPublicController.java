@@ -2,8 +2,6 @@ package ru.practicum.controller.category;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,18 +27,11 @@ public class CategoryPublicController {
             @RequestParam(value = "from", defaultValue = "0") @Min(0) Integer from,
             @RequestParam(value = "size", defaultValue = "10") @Min(1) Integer size
     ) {
-        log.debug("+ getCategories");
-        Pageable pageable = PageRequest.of(from / size, size);
-        List<CategoryResponseDto> categories = categoryService.getCategories(pageable);
-        log.debug("- getCategories: {}", categories);
-        return categories;
+        return categoryService.getCategories(from, size);
     }
 
     @GetMapping("/{categoryId}")
     public CategoryResponseDto getCategoryById(@PathVariable long categoryId) {
-        log.debug("+ getCategoryById: categoryId={}", categoryId);
-        CategoryResponseDto category = categoryService.getCategoryById(categoryId);
-        log.debug("- getCategoryById: {}", category);
-        return category;
+        return categoryService.getCategoryById(categoryId);
     }
 }

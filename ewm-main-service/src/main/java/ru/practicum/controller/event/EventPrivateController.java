@@ -1,9 +1,6 @@
 package ru.practicum.controller.event;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,7 +31,6 @@ import java.util.List;
 @RequestMapping("/users/{userId}/events")
 @RequiredArgsConstructor
 @Validated
-@Slf4j
 public class EventPrivateController {
     private final EventService eventService;
     private final ParticipationRequestService requestService;
@@ -45,19 +41,12 @@ public class EventPrivateController {
             @RequestParam(value = "from", defaultValue = "0") @Min(0) Integer from,
             @RequestParam(value = "size", defaultValue = "10") @Min(1) Integer size
     ) {
-        log.debug("+ getEventsByInitiatorId: initiatorId={}", initiatorId);
-        Pageable pageable = PageRequest.of(from / size, size);
-        List<EventShortDto> events = eventService.getEventsByInitiatorId(initiatorId, pageable);
-        log.debug("- getEventsByInitiatorId: {}", events);
-        return events;
+        return eventService.getEventsByInitiatorId(initiatorId, from, size);
     }
 
     @GetMapping("/{eventId}")
     public EventFullDto getEventById(@PathVariable long eventId, @PathVariable long userId) {
-        log.debug("+ getEventById: eventId={}", eventId);
-        EventFullDto event = eventService.getEventById(eventId, userId);
-        log.debug("- getEventById: {}", event);
-        return event;
+        return eventService.getEventById(eventId, userId);
     }
 
     @GetMapping("/{eventId}/requests")
@@ -65,30 +54,21 @@ public class EventPrivateController {
             @PathVariable long eventId,
             @PathVariable long userId
     ) {
-        log.debug("+ getParticipationRequestsEventById: eventId={}, userId={}", eventId, userId);
-        List<ParticipationRequestResponseDto> requests = requestService.getRequestsByEventId(eventId, userId);
-        log.debug("- getParticipationRequestsEventById: {}", requests);
-        return requests;
+        return requestService.getRequestsByEventId(eventId, userId);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public EventFullDto createEvent(@RequestBody @Validated(ValidationGroup.Create.class) EventCreateDto event,
                                     @PathVariable long userId) {
-        log.debug("+ createEvent");
-        EventFullDto createdEvent = eventService.createEvent(event, userId);
-        log.debug("- createEvent: {}", createdEvent);
-        return createdEvent;
+        return eventService.createEvent(event, userId);
     }
 
     @PatchMapping("/{eventId}")
     public EventFullDto updateEvent(@PathVariable long eventId,
                                     @RequestBody @Validated(ValidationGroup.Update.class) EventUpdateUserDto event,
                                     @PathVariable long userId) {
-        log.debug("+ updateEvent: eventId={}", eventId);
-        EventFullDto updatedEvent = eventService.updateEvent(eventId, event, userId);
-        log.debug("- updateEvent: {}", updatedEvent);
-        return updatedEvent;
+        return eventService.updateEvent(eventId, event, userId);
     }
 
     @PatchMapping("/{eventId}/requests")
@@ -96,9 +76,6 @@ public class EventPrivateController {
             @RequestBody @Valid ParticipationRequestChangeStatusDto statusData,
             @PathVariable long eventId,
             @PathVariable long userId) {
-        log.debug("+ updateRequestStatuses: eventId={}", eventId);
-        ParticipationRequestChangeStatusResponseDto updatedRequest = requestService.updateRequestStatuses(statusData, eventId, userId);
-        log.debug("- updateRequestStatuses");
-        return updatedRequest;
+        return requestService.updateRequestStatuses(statusData, eventId, userId);
     }
 }

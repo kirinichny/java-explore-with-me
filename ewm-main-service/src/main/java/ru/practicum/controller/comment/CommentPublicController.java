@@ -26,9 +26,6 @@ public class CommentPublicController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CommentResponseDto createComment(@RequestBody @Valid CommentCreateDto comment) {
-        log.debug("+ createComment: comment={}", comment);
-        CommentResponseDto createdComment = commentService.createComment(comment);
-        log.debug("- createComment");
-        return createdComment;
+        return commentService.createComment(comment);
     }
 }
