@@ -1,7 +1,6 @@
 package ru.practicum.controller.participationRequest;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,34 +20,24 @@ import java.util.List;
 @RequestMapping("/users/{userId}/requests")
 @RequiredArgsConstructor
 @Validated
-@Slf4j
 public class ParticipationRequestPrivateController {
     private final ParticipationRequestService requestService;
 
     @GetMapping
     public List<ParticipationRequestResponseDto> getRequestsByRequesterId(
             @PathVariable(name = "userId") long requesterId) {
-        log.debug("+ getRequestsByRequesterId: requesterId={}", requesterId);
-        List<ParticipationRequestResponseDto> requests = requestService.getRequestsByRequesterId(requesterId);
-        log.debug("- getRequestsByRequesterId: {}", requests);
-        return requests;
+        return requestService.getRequestsByRequesterId(requesterId);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ParticipationRequestResponseDto createRequest(@RequestParam long eventId,
                                                          @PathVariable long userId) {
-        log.debug("+ createRequest");
-        ParticipationRequestResponseDto createdRequest = requestService.createRequest(eventId, userId);
-        log.debug("- createRequest: {}", createdRequest);
-        return createdRequest;
+        return requestService.createRequest(eventId, userId);
     }
 
     @PatchMapping("/{requestId}/cancel")
     public ParticipationRequestResponseDto cancelRequest(@PathVariable long requestId, @PathVariable long userId) {
-        log.debug("+ cancelRequest: requestId={}", requestId);
-        ParticipationRequestResponseDto request = requestService.cancelRequest(requestId, userId);
-        log.debug("- cancelRequest");
-        return request;
+        return requestService.cancelRequest(requestId, userId);
     }
 }

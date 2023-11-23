@@ -1,6 +1,5 @@
 package ru.practicum.service;
 
-import org.springframework.data.domain.Pageable;
 import ru.practicum.dto.event.EventCreateDto;
 import ru.practicum.dto.event.EventFullDto;
 import ru.practicum.dto.event.EventShortDto;
@@ -12,15 +11,15 @@ import ru.practicum.model.event.EventSearchPublicFilter;
 import java.util.List;
 
 public interface EventService {
-    List<EventShortDto> getEventsByInitiatorId(long initiatorId, Pageable pageable);
+    List<EventShortDto> getEventsByInitiatorId(long initiatorId, Integer from, Integer size);
 
     EventFullDto getEventById(long eventId, long userId);
 
     EventFullDto getPublishedEventById(long eventId);
 
-    List<EventFullDto> searchEvents(EventSearchAdminFilter filter, Pageable pageable);
+    List<EventFullDto> searchEvents(EventSearchAdminFilter filter, Integer from, Integer size);
 
-    List<EventShortDto> searchEvents(EventSearchPublicFilter filter, Pageable pageable);
+    List<EventShortDto> searchEvents(EventSearchPublicFilter filter, Integer from, Integer size);
 
     EventFullDto createEvent(EventCreateDto event, long userId);
 

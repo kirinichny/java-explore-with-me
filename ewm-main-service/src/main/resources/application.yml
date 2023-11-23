@@ -20,9 +20,9 @@ spring:
 
 spring.datasource:
   driverClassName: org.postgresql.Driver
-  url: ${SPRING_DATASOURCE_URL}
-  username: ${POSTGRES_USER}
-  password: ${POSTGRES_PASSWORD}
+  url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ewm_main}
+  username: ${POSTGRES_USER:root}
+  password: ${POSTGRES_PASSWORD:root}
 
 ---
 

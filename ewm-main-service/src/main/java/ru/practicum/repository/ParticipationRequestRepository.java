@@ -22,6 +22,8 @@ public interface ParticipationRequestRepository extends JpaRepository<Participat
 
     boolean existsAllByIdInAndStatus(List<Long> requestIds, ParticipationRequestStatus status);
 
+    boolean existsByEventIdAndRequesterIdAndStatus(long eventId, long requesterId, ParticipationRequestStatus status);
+
     @Modifying
     @Query("UPDATE ParticipationRequest pr SET pr.status = :status WHERE pr.id IN :requestIds")
     void updateRequestStatuses(@Param("requestIds") List<Long> requestIds, @Param("status") ParticipationRequestStatus status);

@@ -1,9 +1,6 @@
 package ru.practicum.controller.event;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -26,7 +23,6 @@ import java.util.List;
 @RequestMapping("/admin/events")
 @RequiredArgsConstructor
 @Validated
-@Slf4j
 public class EventAdminController {
     private final EventService eventService;
 
@@ -36,19 +32,12 @@ public class EventAdminController {
             @RequestParam(value = "from", defaultValue = "0") @Min(0) Integer from,
             @RequestParam(value = "size", defaultValue = "10") @Min(1) Integer size
     ) {
-        log.debug("+ getCategories");
-        Pageable pageable = PageRequest.of(from / size, size);
-        List<EventFullDto> events = eventService.searchEvents(filter, pageable);
-        log.debug("- getCategories: {}", events);
-        return events;
+        return eventService.searchEvents(filter, from, size);
     }
 
     @PatchMapping("/{eventId}")
     public EventFullDto updateEvent(@PathVariable long eventId,
                                     @RequestBody @Validated(ValidationGroup.Update.class) EventUpdateAdminDto event) {
-        log.debug("+ updateEvent: eventId={}", eventId);
-        EventFullDto updatedEvent = eventService.updateEvent(eventId, event);
-        log.debug("- updateEvent: {}", updatedEvent);
-        return updatedEvent;
+        return eventService.updateEvent(eventId, event);
     }
 }
